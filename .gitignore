@@ -1,0 +1,5 @@
+# Dati dello studio: restano solo sul computer locale, mai nel repository
+dati/
+
+__pycache__/
+*.pyc

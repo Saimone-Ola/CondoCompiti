@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CondoCompiti — Gestione compiti dello studio</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+
+<!-- Schermata di accesso -->
+<div id="schermata-accesso" class="nascosto">
+  <div class="accesso-scatola">
+    <div class="accesso-logo">🏢</div>
+    <h1 id="accesso-titolo">CondoCompiti</h1>
+    <p class="accesso-sotto">Gestione dei compiti dello studio</p>
+    <div id="accesso-passo-nome">
+      <p class="accesso-istruzione">Chi sei? Tocca il tuo nome:</p>
+      <div id="accesso-utenti"></div>
+    </div>
+    <div id="accesso-passo-pin" class="nascosto">
+      <p class="accesso-istruzione">Ciao <strong id="accesso-nome-scelto"></strong>!<br>Scrivi il tuo PIN:</p>
+      <input id="accesso-pin" type="password" inputmode="numeric" autocomplete="off"
+             maxlength="8" placeholder="••••">
+      <p id="accesso-errore" class="errore nascosto"></p>
+      <div class="accesso-bottoni">
+        <button id="accesso-indietro" class="bottone secondario">← Indietro</button>
+        <button id="accesso-entra" class="bottone primario">Entra</button>
+      </div>
+    </div>
+    <p class="accesso-nota">I dati restano sul computer dello studio.<br>Nessun collegamento a internet.</p>
+  </div>
+</div>
+
+<!-- Applicazione -->
+<div id="app" class="nascosto">
+  <header id="testata">
+    <div class="testata-riga">
+      <div class="testata-logo">🏢 <span id="testata-studio">CondoCompiti</span></div>
+      <div class="testata-utente">
+        <span id="testata-nome"></span>
+        <button id="bottone-esci" class="bottone secondario piccolo">Esci</button>
+      </div>
+    </div>
+    <nav id="navigazione"></nav>
+  </header>
+  <main id="contenuto"></main>
+  <footer id="fondo">CondoCompiti — tutti i dati restano su questo computer · nessun servizio esterno</footer>
+</div>
+
+<!-- Finestra di dialogo generica -->
+<div id="velo" class="nascosto">
+  <div id="finestra" role="dialog" aria-modal="true"></div>
+</div>
+
+<!-- Messaggio temporaneo -->
+<div id="avviso" class="nascosto"></div>
+
+<!-- Area usata solo per la stampa -->
+<div id="area-stampa"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
