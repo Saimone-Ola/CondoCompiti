@@ -10,7 +10,7 @@ nessuna connessione a internet. Funziona anche completamente offline.
 2. Si apre una **finestra nera: lasciala aperta**, è il programma in funzione (il browser si apre da solo).
 3. Nella finestra nera leggi l'**indirizzo per gli altri computer** (es. `http://192.168.1.25:8420`).
 4. Sugli **altri computer, tablet o telefoni** dell'ufficio apri il browser e scrivi quell'indirizzo: non serve installare nulla.
-5. **Entra toccando il tuo nome** e scrivendo il PIN. Utenti di prova: **Amministratore (PIN 1234)**, **Luca (PIN 1111)**, **Paola (PIN 2222)**.
+5. Al **primo avvio** l'app ti dà il benvenuto: **crea l'accesso del titolare** (il tuo nome + un PIN a tua scelta). Dalle volte successive si entra **toccando il proprio nome** e scrivendo il proprio PIN.
 
 > Serve solo Python 3 sul computer principale (sul Mac è già presente; su Windows
 > si installa una sola volta da python.org, spuntando "Add python.exe to PATH").
@@ -31,9 +31,10 @@ nessuna connessione a internet. Funziona anche completamente offline.
 
 ## Primi passi consigliati
 
-1. Entra come **Amministratore** (PIN 1234) e guarda i dati di esempio già caricati.
-2. In **Impostazioni** cambia i PIN, il nome dello studio e aggiungi i tuoi collaboratori.
-3. In **Anagrafiche** inserisci i tuoi condomìni (ed elimina quelli di esempio).
-4. Dalla **Bacheca** crea i compiti, anche con i **modelli ricorrenti** (assemblea,
+1. Al primo avvio crea l'accesso del **titolare** (nome + PIN) e, se vuoi, il nome dello studio.
+2. In **Anagrafiche** aggiungi i tuoi **collaboratori** (ognuno con il suo nome e il suo PIN)
+   e i tuoi **condomìni**: la Bacheca ti guida con i «Primi passi».
+3. Dalla **Bacheca** crea i compiti, anche con i **modelli ricorrenti** (assemblea,
    chiusura esercizio, morosità, incarico tecnico).
-5. Ogni scheda compito ha il bottone **🖨 Stampa** per chi preferisce lavorare su carta.
+4. Ogni scheda compito ha il bottone **🖨 Stampa** per chi preferisce lavorare su carta.
+5. In **Impostazioni** trovi backup, ripristino, cancellazione dati e il registro attività.

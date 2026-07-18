@@ -199,6 +199,8 @@ async function mostraAccesso() {
     return;
   }
   $("#accesso-titolo").textContent = elenco.nome_studio || "CondoCompiti";
+  $("#accesso-domanda").classList.remove("nascosto");
+  if (elenco.primo_avvio) { mostraPrimoAvvio(); return; }
   const ordinati = [...elenco.utenti].sort((a, b) =>
     (a.ruolo === b.ruolo ? a.nome.localeCompare(b.nome) : a.ruolo === "titolare" ? -1 : 1));
   $("#accesso-utenti").innerHTML = ordinati.map((u) => `
@@ -218,6 +220,53 @@ async function mostraAccesso() {
       $("#accesso-pin").focus();
     });
   });
+}
+
+function mostraPrimoAvvio() {
+  // Nessun utente ancora: il titolare crea qui il proprio accesso.
+  $("#accesso-passo-pin").classList.add("nascosto");
+  $("#accesso-passo-nome").classList.remove("nascosto");
+  $("#accesso-domanda").classList.add("nascosto");
+  $("#accesso-utenti").innerHTML = `
+    <div style="text-align:left">
+      <p class="accesso-istruzione" style="text-align:center;margin-top:0">
+        <b>Benvenuto!</b> È il primo avvio:<br>crea l'accesso del titolare.</p>
+      <label for="pa-studio">Nome dello studio</label>
+      <input id="pa-studio" style="width:100%" placeholder="Es.: Studio Rossi Amministrazioni">
+      <label for="pa-nome">Il tuo nome (titolare) *</label>
+      <input id="pa-nome" style="width:100%" placeholder="Es.: Franca">
+      <label for="pa-pin">Scegli un PIN (4-8 cifre) *</label>
+      <input id="pa-pin" type="password" inputmode="numeric" maxlength="8" style="width:100%" autocomplete="off">
+      <label for="pa-pin2">Ripeti il PIN *</label>
+      <input id="pa-pin2" type="password" inputmode="numeric" maxlength="8" style="width:100%" autocomplete="off">
+      <p id="pa-errore" class="errore nascosto"></p>
+      <div class="accesso-bottoni">
+        <button id="pa-inizia" class="bottone primario" style="width:100%">Inizia a usare l'app</button>
+      </div>
+      <p class="accesso-nota" style="margin-top:1rem">I collaboratori li aggiungerai dopo,
+      dalla pagina <b>Anagrafiche</b>: ognuno avrà il suo nome e il suo PIN.</p>
+    </div>`;
+  const errore = (testo) => {
+    const riga = $("#pa-errore");
+    riga.textContent = testo;
+    riga.classList.remove("nascosto");
+  };
+  $("#pa-inizia").addEventListener("click", async () => {
+    const pin = $("#pa-pin").value.trim();
+    if (pin !== $("#pa-pin2").value.trim()) { errore("I due PIN non coincidono: riprova."); return; }
+    try {
+      await api("primo-avvio", "POST", {
+        nome: $("#pa-nome").value,
+        pin,
+        nome_studio: $("#pa-studio").value,
+      });
+      await caricaEMostra();
+      avviso("Benvenuto! Ora aggiungi condomìni e collaboratori dalla pagina Anagrafiche.");
+    } catch (e) {
+      errore(e.message);
+    }
+  });
+  $("#pa-nome").focus();
 }
 
 async function entra() {
@@ -370,11 +419,27 @@ function vistaBacheca() {
         </div>`).join("")}
     </div>` : "";
 
+  const primiPassi = sonoCapo() &&
+    (!S.dati.condomini.length || S.dati.utenti.length < 2 || !compiti.length) ? `
+    <div class="riquadro">
+      <h2>👋 Primi passi</h2>
+      <p style="margin-top:0;color:var(--testo-tenue)">Tre passaggi e lo studio è operativo:</p>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="bottone ${S.dati.condomini.length ? "secondario" : "primario"}" id="pp-condominio">
+          ${S.dati.condomini.length ? "✔ Condomìni inseriti" : "1. Aggiungi un condominio"}</button>
+        <button class="bottone ${S.dati.utenti.length > 1 ? "secondario" : "primario"}" id="pp-utente">
+          ${S.dati.utenti.length > 1 ? "✔ Collaboratori aggiunti" : "2. Aggiungi un collaboratore"}</button>
+        <button class="bottone ${compiti.length ? "secondario" : "primario"}" id="pp-compito">
+          ${compiti.length ? "✔ Primo compito creato" : "3. Crea il primo compito"}</button>
+      </div>
+    </div>` : "";
+
   $("#contenuto").innerHTML = `
     <div class="intestazione-vista">
       <h1>Bacheca — ${sonoCapo() ? "tutti i compiti dello studio" : "i tuoi compiti"}</h1>
       ${sonoCapo() ? `<div class="azioni"><button class="bottone primario" id="bacheca-nuovo">+ Nuovo compito</button></div>` : ""}
     </div>
+    ${primiPassi}
     <div class="contatori">
       ${contatore("aperti", apertiTutti.length, "Compiti aperti", "aperti")}
       ${contatore("in-scadenza", inScadenza.length, "In scadenza (7 giorni)", "in-scadenza")}
@@ -399,6 +464,12 @@ function vistaBacheca() {
     b.addEventListener("click", () => finestraModello(b.dataset.modello)));
   const nuovo = $("#bacheca-nuovo");
   if (nuovo) nuovo.addEventListener("click", () => finestraCompito(null));
+  const passi = [["#pp-condominio", () => finestraCondominio(null)],
+    ["#pp-utente", () => finestraUtente(null)], ["#pp-compito", () => finestraCompito(null)]];
+  for (const [id, azione] of passi) {
+    const bottone = $(id);
+    if (bottone) bottone.addEventListener("click", azione);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -683,10 +754,50 @@ function vistaScadenzario() {
 // Anagrafiche (solo titolare)
 // ---------------------------------------------------------------------------
 
+function pannelloCollaboratori() {
+  const apertiPerUtente = (id) => S.dati.compiti.filter((c) => c.assegnato_a === id && aperto(c)).length;
+  return `
+    <div class="riquadro">
+      <h2>👥 Collaboratori e PIN <button class="bottone primario piccolo utente-nuovo">+ Aggiungi</button></h2>
+      ${S.dati.utenti.map((u) => `
+        <div class="riga-elemento ${u.attivo ? "" : "non-attivo"}">
+          <div><div class="principale">${esc(u.nome)}</div>
+          <div class="secondario-testo">${u.ruolo === "titolare" ? "Titolare" : "Dipendente"}${u.attivo ? "" : " · non attivo"} · ${apertiPerUtente(u.id)} compiti aperti</div></div>
+          <div class="azioni-riga">
+            <button class="bottone secondario piccolo" data-modifica-utente="${u.id}">Modifica</button>
+            <button class="bottone secondario piccolo" data-pin-utente="${u.id}">Cambia PIN</button>
+            ${u.id !== S.utente.id ? `<button class="bottone pericolo piccolo" data-elimina-utente="${u.id}">Elimina</button>` : ""}
+          </div>
+        </div>`).join("")}
+      <p class="nota-informativa">Con <b>+ Aggiungi</b> crei un collaboratore: gli basterà
+      scegliere il proprio nome e digitare il suo PIN per entrare. Per chi lascia lo studio usa
+      <b>Modifica → non attivo</b> (i compiti passati restano intestati a lui) oppure
+      <b>Elimina</b> per la cancellazione definitiva.</p>
+    </div>`;
+}
+
+function collegaPannelloCollaboratori() {
+  const radice = $("#contenuto");
+  radice.querySelectorAll(".utente-nuovo").forEach((b) =>
+    b.addEventListener("click", () => finestraUtente(null)));
+  radice.querySelectorAll("[data-modifica-utente]").forEach((b) =>
+    b.addEventListener("click", () =>
+      finestraUtente(S.dati.utenti.find((u) => u.id === Number(b.dataset.modificaUtente)))));
+  radice.querySelectorAll("[data-pin-utente]").forEach((b) =>
+    b.addEventListener("click", () =>
+      finestraPin(S.dati.utenti.find((u) => u.id === Number(b.dataset.pinUtente)))));
+  radice.querySelectorAll("[data-elimina-utente]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const u = S.dati.utenti.find((x) => x.id === Number(b.dataset.eliminaUtente));
+      if (!confirm(`Eliminare definitivamente «${u.nome}»?\nI suoi compiti resteranno, da riassegnare.`)) return;
+      const ok = await esegui(() => api(`utenti/${u.id}`, "DELETE"), "Collaboratore eliminato.");
+      if (ok) aggiorna();
+    }));
+}
+
 function vistaAnagrafiche() {
   if (!sonoCapo()) { vai("bacheca"); return; }
   const apertiPerCondominio = (id) => S.dati.compiti.filter((c) => c.condominio_id === id && aperto(c)).length;
-  const apertiPerUtente = (id) => S.dati.compiti.filter((c) => c.assegnato_a === id && aperto(c)).length;
 
   $("#contenuto").innerHTML = `
     <div class="intestazione-vista"><h1>Anagrafiche</h1></div>
@@ -702,17 +813,9 @@ function vistaAnagrafiche() {
           </div>
         </div>`).join("") : `<p class="vuoto">Nessun condominio inserito.</p>`}
     </div>
-    <div class="riquadro">
-      <h2>👥 Collaboratori</h2>
-      ${S.dati.utenti.map((u) => `
-        <div class="riga-elemento ${u.attivo ? "" : "non-attivo"}">
-          <div><div class="principale">${esc(u.nome)}</div>
-          <div class="secondario-testo">${u.ruolo === "titolare" ? "Titolare" : "Dipendente"}${u.attivo ? "" : " · non attivo"} · ${apertiPerUtente(u.id)} compiti aperti</div></div>
-        </div>`).join("")}
-      <p class="nota-informativa">La gestione di collaboratori e PIN si trova in
-        <b>Impostazioni</b>, insieme a copie di sicurezza e cancellazione dei dati.</p>
-    </div>`;
+    ${pannelloCollaboratori()}`;
 
+  collegaPannelloCollaboratori();
   $("#condominio-nuovo").addEventListener("click", () => finestraCondominio(null));
   $("#contenuto").querySelectorAll("[data-modifica-condominio]").forEach((b) =>
     b.addEventListener("click", () =>
@@ -751,21 +854,7 @@ function vistaImpostazioni() {
       basta il browser. I dati non escono mai da questo computer.</p>
     </div>
 
-    <div class="riquadro">
-      <h2>👥 Collaboratori e PIN <button class="bottone primario piccolo" id="utente-nuovo">+ Aggiungi</button></h2>
-      ${S.dati.utenti.map((u) => `
-        <div class="riga-elemento ${u.attivo ? "" : "non-attivo"}">
-          <div><div class="principale">${esc(u.nome)}</div>
-          <div class="secondario-testo">${u.ruolo === "titolare" ? "Titolare" : "Dipendente"}${u.attivo ? "" : " · non attivo"}</div></div>
-          <div class="azioni-riga">
-            <button class="bottone secondario piccolo" data-modifica-utente="${u.id}">Modifica</button>
-            <button class="bottone secondario piccolo" data-pin-utente="${u.id}">Cambia PIN</button>
-            ${u.id !== S.utente.id ? `<button class="bottone pericolo piccolo" data-elimina-utente="${u.id}">Elimina</button>` : ""}
-          </div>
-        </div>`).join("")}
-      <p class="nota-informativa">Suggerimento: per chi lascia lo studio usa <b>Modifica → non attivo</b>
-      (i compiti passati restano intestati a lui) oppure <b>Elimina</b> per la cancellazione definitiva.</p>
-    </div>
+    ${pannelloCollaboratori()}
 
     <div class="riquadro">
       <h2>💾 Copia di sicurezza e dati</h2>
@@ -805,20 +894,7 @@ function vistaImpostazioni() {
       </div>
     </div>`;
 
-  $("#utente-nuovo").addEventListener("click", () => finestraUtente(null));
-  $("#contenuto").querySelectorAll("[data-modifica-utente]").forEach((b) =>
-    b.addEventListener("click", () =>
-      finestraUtente(S.dati.utenti.find((u) => u.id === Number(b.dataset.modificaUtente)))));
-  $("#contenuto").querySelectorAll("[data-pin-utente]").forEach((b) =>
-    b.addEventListener("click", () =>
-      finestraPin(S.dati.utenti.find((u) => u.id === Number(b.dataset.pinUtente)))));
-  $("#contenuto").querySelectorAll("[data-elimina-utente]").forEach((b) =>
-    b.addEventListener("click", async () => {
-      const u = S.dati.utenti.find((x) => x.id === Number(b.dataset.eliminaUtente));
-      if (!confirm(`Eliminare definitivamente «${u.nome}»?\nI suoi compiti resteranno, da riassegnare.`)) return;
-      const ok = await esegui(() => api(`utenti/${u.id}`, "DELETE"), "Collaboratore eliminato.");
-      if (ok) aggiorna();
-    }));
+  collegaPannelloCollaboratori();
 
   $("#dati-esporta").addEventListener("click", () => {
     const collegamento = document.createElement("a");

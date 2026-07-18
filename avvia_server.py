@@ -158,102 +158,6 @@ def struttura_vuota():
     }
 
 
-def dati_di_esempio():
-    """Archivio iniziale con dati dimostrativi, con date relative a oggi."""
-    d = struttura_vuota()
-    oggi = date.today()
-
-    def g(n):  # data a n giorni da oggi, in formato ISO
-        return (oggi + timedelta(days=n)).isoformat()
-
-    def ora(n_giorni, hh="10:30"):
-        return "%sT%s" % (g(n_giorni), hh)
-
-    d["utenti"] = [
-        nuovo_utente(1, "Amministratore", "titolare", "1234"),
-        nuovo_utente(2, "Luca", "dipendente", "1111"),
-        nuovo_utente(3, "Paola", "dipendente", "2222"),
-    ]
-    d["condomini"] = [
-        {"id": 1, "nome": "Condominio Traiano", "indirizzo": "Via Appia 12"},
-        {"id": 2, "nome": "Condominio Aurelio", "indirizzo": "Corso Aurelio 5"},
-        {"id": 3, "nome": "Residenza Adriana", "indirizzo": "Largo Adriano 3"},
-    ]
-
-    def compito(id_, titolo, cond, cat, assegnato_a, scadenza, priorita, stato,
-                istruzioni, **extra):
-        c = {"id": id_, "titolo": titolo, "condominio_id": cond, "categoria": cat,
-             "istruzioni": istruzioni, "assegnato_a": assegnato_a, "assegnato_da": 1,
-             "data_assegnazione": extra.pop("assegnato_il", g(-7)),
-             "scadenza": scadenza, "priorita": priorita, "stato": stato,
-             "esito": "", "nota_ritorno": "", "data_completamento": None,
-             "riscontri": [], "da_vedere": False, "nota_da_leggere": False,
-             "creato_il": ora(-7), "modificato_il": ora(-1), "modificato_da": "Amministratore"}
-        c.update(extra)
-        return c
-
-    d["compiti"] = [
-        compito(1, "Inviare le convocazioni per l'assemblea ordinaria", 1, "Assemblea",
-                2, g(4), "Alta", "In corso",
-                "Preparare e inviare le convocazioni a tutti i condòmini. Controllare gli indirizzi PEC "
-                "aggiornati e usare la raccomandata per chi non ha la PEC.",
-                da_vedere=True,
-                riscontri=[{"quando": ora(-1, "16:40"), "autore": "Luca", "problema": False,
-                            "testo": "Preparate 28 convocazioni su 30. Mancano gli indirizzi aggiornati "
-                                     "di due condòmini del terzo piano: li recupero domani in portineria."}]),
-        compito(2, "Sollecitare le rate condominiali arretrate", 2, "Contabilità/Rate",
-                3, g(-2), "Urgente", "In corso",
-                "Inviare il sollecito bonario ai tre condòmini in ritardo con la seconda rata. "
-                "Allegare l'estratto conto aggiornato.",
-                da_vedere=True,
-                riscontri=[{"quando": ora(-2, "11:15"), "autore": "Paola", "problema": True,
-                            "testo": "Due solleciti inviati. Il terzo condòmino contesta l'importo della rata: "
-                                     "dice di aver già pagato a marzo. Serve una verifica sull'estratto conto "
-                                     "prima di procedere."}]),
-        compito(3, "Richiedere i preventivi per il rifacimento del tetto", 3, "Manutenzione",
-                2, g(10), "Media", "Da iniziare",
-                "Contattare almeno tre ditte per il rifacimento della copertura. Fissare i sopralluoghi "
-                "e chiedere preventivi comparabili (stessa descrizione dei lavori)."),
-        compito(4, "Registrare le fatture dei fornitori di giugno", 1, "Contabilità/Rate",
-                3, g(-1), "Media", "Completato",
-                "Registrare in contabilità tutte le fatture dei fornitori arrivate a giugno "
-                "(pulizie, ascensore, giardinaggio).",
-                da_vedere=True, esito="Completato regolarmente", data_completamento=g(-1),
-                nota_ritorno="Ottimo lavoro. Ricordati di archiviare anche le copie cartacee nel faldone 2026.",
-                nota_da_leggere=True,
-                riscontri=[{"quando": ora(-1, "17:20"), "autore": "Paola", "problema": False,
-                            "testo": "Registrate tutte le 14 fatture di giugno. Totale spese: in linea con il "
-                                     "preventivo. Copie salvate nella cartella del condominio."}]),
-        compito(5, "Comunicare ai condòmini i lavori in facciata", 3, "Comunicazioni",
-                3, g(2), "Media", "In attesa",
-                "Preparare l'avviso da affiggere in bacheca e da inviare via PEC con le date dei lavori "
-                "e le indicazioni per liberare i balconi.",
-                riscontri=[{"quando": ora(-3, "09:50"), "autore": "Paola", "problema": False,
-                            "testo": "Avviso pronto. In attesa della conferma delle date da parte della ditta: "
-                                     "appena arriva, invio tutto."}]),
-        compito(6, "Rinnovare la polizza globale fabbricato", 2, "Adempimenti/Pratiche",
-                2, g(20), "Bassa", "Da iniziare",
-                "Richiedere il rinnovo della polizza in scadenza e confrontare l'offerta con almeno "
-                "un'altra compagnia."),
-        compito(7, "Inviare il verbale dell'assemblea straordinaria", 1, "Assemblea",
-                2, g(-30), "Alta", "Archiviato",
-                "Redigere e inviare a tutti i condòmini il verbale dell'assemblea straordinaria.",
-                assegnato_il=g(-45), esito="Completato regolarmente", data_completamento=g(-32),
-                riscontri=[{"quando": ora(-32, "12:00"), "autore": "Luca", "problema": False,
-                            "testo": "Verbale inviato a tutti via PEC e affisso in bacheca."}]),
-    ]
-    d["contatori"] = {"utente": 3, "condominio": 3, "compito": 7}
-    d["registro"] = [
-        {"quando": ora(-1, "17:20"), "chi": "Paola",
-         "azione": "Riscontro sul compito «Registrare le fatture dei fornitori di giugno» (completato)"},
-        {"quando": ora(-1, "16:40"), "chi": "Luca",
-         "azione": "Riscontro sul compito «Inviare le convocazioni per l'assemblea ordinaria»"},
-        {"quando": ora(-7, "09:05"), "chi": "Amministratore",
-         "azione": "Creati i compiti di esempio"},
-    ]
-    return d
-
-
 def salva_dati():
     """Scrittura atomica: prima su file temporaneo, poi sostituzione."""
     os.makedirs(CARTELLA_DATI, exist_ok=True)
@@ -269,7 +173,9 @@ def carica_dati():
         with open(FILE_DATI, "r", encoding="utf-8") as f:
             DATI = json.load(f)
     else:
-        DATI = dati_di_esempio()
+        # Primo avvio: archivio vuoto. Il titolare crea il proprio utente
+        # dalla schermata di benvenuto dell'app.
+        DATI = struttura_vuota()
         salva_dati()
 
 
@@ -471,6 +377,8 @@ class Gestore(BaseHTTPRequestHandler):
 
         if rotta == ("GET", "utenti-accesso"):
             return self.api_utenti_accesso()
+        if rotta == ("POST", "primo-avvio"):
+            return self.api_primo_avvio()
         if rotta == ("POST", "accesso"):
             return self.api_accesso()
         if rotta == ("POST", "uscita"):
@@ -501,8 +409,32 @@ class Gestore(BaseHTTPRequestHandler):
 
     def api_utenti_accesso(self):
         elenco = [utente_pubblico(u) for u in DATI["utenti"] if u["attivo"]]
-        nome_studio = DATI["impostazioni"]["nome_studio"]
-        self.rispondi_json({"utenti": elenco, "nome_studio": nome_studio})
+        self.rispondi_json({"utenti": elenco,
+                            "nome_studio": DATI["impostazioni"]["nome_studio"],
+                            "primo_avvio": not DATI["utenti"]})
+
+    def api_primo_avvio(self):
+        """Prima configurazione: crea l'utente titolare quando non esiste nessuno."""
+        if DATI["utenti"]:
+            raise ErroreApi(403, "La configurazione iniziale è già stata fatta.")
+        corpo = self.leggi_corpo()
+        nome = (corpo.get("nome") or "").strip()
+        pin = str(corpo.get("pin") or "")
+        if not nome:
+            raise ErroreApi(400, "Scrivi il tuo nome.")
+        if not pin_valido(pin):
+            raise ErroreApi(400, "Il PIN deve essere di 4-8 cifre.")
+        nome_studio = (corpo.get("nome_studio") or "").strip()
+        if nome_studio:
+            DATI["impostazioni"]["nome_studio"] = nome_studio
+        titolare = nuovo_utente(prossimo_id("utente"), nome, "titolare", pin)
+        DATI["utenti"].append(titolare)
+        registra(nome, "Prima configurazione: creato l'utente titolare")
+        salva_dati()
+        token = secrets.token_hex(24)
+        SESSIONI[token] = {"utente_id": titolare["id"], "scade": time.time() + DURATA_SESSIONE}
+        cookie = "cc_sessione=%s; Path=/; HttpOnly; SameSite=Lax" % token
+        self.rispondi_json({"utente": utente_pubblico(titolare)}, cookie=cookie)
 
     def api_accesso(self):
         corpo = self.leggi_corpo()
