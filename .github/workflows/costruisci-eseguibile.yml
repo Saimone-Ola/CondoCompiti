@@ -1,0 +1,55 @@
+# Costruisce CondoCompiti.exe (Windows, nessuna installazione richiesta)
+# e lo pubblica tra le Release quando si spinge un tag "v*".
+# La costruzione avviene sui server di GitHub: l'app in studio resta
+# completamente locale e senza connessioni a internet.
+
+name: Costruisci eseguibile Windows
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+
+      - name: Prepara Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installa PyInstaller
+        run: pip install pyinstaller
+
+      - name: Costruisci CondoCompiti.exe
+        run: pyinstaller --onefile --name CondoCompiti --add-data "web;web" avvia_server.py
+
+      - name: Conserva l'eseguibile
+        uses: actions/upload-artifact@v4
+        with:
+          name: CondoCompiti-Windows
+          path: dist/CondoCompiti.exe
+
+      - name: Pubblica la release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: CondoCompiti ${{ github.ref_name }}
+          files: |
+            dist/CondoCompiti.exe
+            LEGGIMI.md
+          body: |
+            **CondoCompiti pronto all'uso per Windows — niente da installare.**
+
+            1. Scarica `CondoCompiti.exe` qui sotto e mettilo dove preferisci (es. sul Desktop del computer principale dello studio).
+            2. Doppio clic: si apre la finestra nera con gli indirizzi e il browser parte da solo.
+            3. Al primo avvio Windows può mostrare un avviso ("PC protetto da Windows"): premi **Ulteriori informazioni → Esegui comunque**. Se il firewall chiede l'autorizzazione, premi **Consenti accesso**.
+
+            I dati restano sul computer dello studio, nella cartella personale dell'utente (`CondoCompiti\dati.json`): aggiornando l'exe non si perde nulla.

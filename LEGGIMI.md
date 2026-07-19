@@ -4,17 +4,21 @@ Programma semplice per assegnare i compiti ai collaboratori e ricevere i loro
 riscontri. **Tutto resta in locale**: nessun cloud, nessun servizio esterno,
 nessuna connessione a internet. Funziona anche completamente offline.
 
-## Guida di avvio in 5 righe
+## Guida di avvio in 5 righe (Windows, niente da installare)
 
-1. Sul computer principale dello studio fai **doppio clic su `Avvia-Windows.bat`** (su Mac: `Avvia-Mac.command`).
-2. Si apre una **finestra nera: lasciala aperta**, è il programma in funzione (il browser si apre da solo).
+1. Sul computer principale dello studio scarica **`CondoCompiti.exe`** da
+   https://github.com/Saimone-Ola/CondoCompiti/releases/latest e mettilo dove vuoi (es. sul Desktop).
+2. **Doppio clic**: si apre una **finestra nera, lasciala aperta** (è il programma) e il browser parte da solo.
+   Se Windows mostra l'avviso «PC protetto da Windows»: **Ulteriori informazioni → Esegui comunque**;
+   se il firewall chiede l'autorizzazione: **Consenti accesso**.
 3. Nella finestra nera leggi l'**indirizzo per gli altri computer** (es. `http://192.168.1.25:8420`).
 4. Sugli **altri computer, tablet o telefoni** dell'ufficio apri il browser e scrivi quell'indirizzo: non serve installare nulla.
 5. Al **primo avvio** l'app ti dà il benvenuto: **crea l'accesso del titolare** (il tuo nome + un PIN a tua scelta). Dalle volte successive si entra **toccando il proprio nome** e scrivendo il proprio PIN.
 
-> Serve solo Python 3 sul computer principale (sul Mac è già presente; su Windows
-> si installa una sola volta da python.org, spuntando "Add python.exe to PATH").
-> Al primo avvio Windows può chiedere l'autorizzazione per la rete: premi «Consenti accesso».
+> **In alternativa** (Mac, oppure se preferisci non usare l'exe): scarica il codice ZIP,
+> estrailo e fai doppio clic su `Avvia-Mac.command` (Mac) o `Avvia-Windows.bat` (Windows;
+> richiede Python 3, da installare una sola volta da python.org spuntando
+> "Add python.exe to PATH").
 
 ## Dove sono salvati i dati e come fare il backup
 

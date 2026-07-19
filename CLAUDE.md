@@ -39,6 +39,10 @@ alla carta.
   scarica come ZIP. Si porta su `main` solo su richiesta dell'utente.
 - Ogni riga di corpo delle richieste API va sempre letta (vedi
   `_leggi_corpo_grezzo`): evita di rompere il keep-alive.
+- Rilascio per l'utente finale: spingere un tag `v*` fa costruire e pubblicare
+  `CondoCompiti.exe` tra le Release (workflow `costruisci-eseguibile.yml`,
+  PyInstaller su Windows). Il server deve restare compatibile con PyInstaller
+  (vedi il ramo `sys.frozen` in testa a `avvia_server.py`).
 
 ## Verifica prima di ogni push
 

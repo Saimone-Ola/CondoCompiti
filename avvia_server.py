@@ -25,14 +25,21 @@ from datetime import date, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote
 
-CARTELLA = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, "frozen", False):
+    # Eseguibile creato con PyInstaller: i file di web/ sono scompattati in una
+    # cartella temporanea (_MEIPASS), mentre "il programma" è dove sta l'exe.
+    CARTELLA = sys._MEIPASS
+    CARTELLA_PROGRAMMA = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    CARTELLA = os.path.dirname(os.path.abspath(__file__))
+    CARTELLA_PROGRAMMA = CARTELLA
 CARTELLA_WEB = os.path.join(CARTELLA, "web")
 # I dati vivono nella cartella personale dell'utente, NON in quella del programma:
 # così si può aggiornare l'app sostituendo la cartella e i dati vengono ritrovati.
 CARTELLA_DATI = os.path.join(os.path.expanduser("~"), "CondoCompiti")
 FILE_DATI = os.path.join(CARTELLA_DATI, "dati.json")
 # Posizione usata dalle prime versioni (dentro la cartella del programma).
-FILE_DATI_VECCHIO = os.path.join(CARTELLA, "dati", "dati.json")
+FILE_DATI_VECCHIO = os.path.join(CARTELLA_PROGRAMMA, "dati", "dati.json")
 PORTA_BASE = 8420
 DURATA_SESSIONE = 12 * 3600  # secondi
 MAX_RIGHE_REGISTRO = 500
