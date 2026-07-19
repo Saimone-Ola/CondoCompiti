@@ -13,6 +13,7 @@ const S = {
   compitoId: null,
   origineDettaglio: "compiti",
   filtri: { ricerca: "", condominio: "", dipendente: "", stato: "", categoria: "", speciale: "" },
+  periodoReport: 30,   // giorni considerati nel report del titolare (null = tutto)
   accessoScelto: null, // utente scelto nella schermata di accesso
 };
 
@@ -309,6 +310,7 @@ function disegna() {
     compiti: vistaCompiti,
     dettaglio: vistaDettaglio,
     scadenzario: vistaScadenzario,
+    report: vistaReport,
     anagrafiche: vistaAnagrafiche,
     impostazioni: vistaImpostazioni,
   };
@@ -324,7 +326,7 @@ function disegnaNavigazione() {
     ["compiti", "Compiti", novita],
     ["scadenzario", "Scadenzario"],
   ];
-  if (sonoCapo()) voci.push(["anagrafiche", "Anagrafiche"], ["impostazioni", "Impostazioni"]);
+  if (sonoCapo()) voci.push(["report", "Report"], ["anagrafiche", "Anagrafiche"], ["impostazioni", "Impostazioni"]);
   const attiva = S.vista === "dettaglio" ? "compiti" : S.vista;
   $("#navigazione").innerHTML = voci.map(([nome, testo, pallino]) => `
     <button class="scheda-nav ${nome === attiva ? "attiva" : ""}" data-vista="${nome}">
@@ -339,6 +341,9 @@ function vai(vista) {
   if (vista !== "dettaglio") S.compitoId = null;
   disegna();
   window.scrollTo(0, 0);
+  // Ricarica i dati dal computer principale, così le novità inserite dagli
+  // altri computer compaiono appena si cambia pagina (oltre che ogni minuto).
+  aggiorna().catch(() => {});
 }
 
 function apriCompito(id, origine) {
@@ -748,6 +753,199 @@ function vistaScadenzario() {
       ${conScadenza.length + senza.length === 0 ? `<p class="vuoto">Nessun compito aperto: tutto in ordine!</p>` : ""}
     </div>`;
   collegaRigheCompito($("#contenuto"), "scadenzario");
+}
+
+// ---------------------------------------------------------------------------
+// Report del titolare
+// ---------------------------------------------------------------------------
+
+const PERIODI_REPORT = [[7, "Ultimi 7 giorni"], [30, "Ultimi 30 giorni"],
+  [90, "Ultimi 3 mesi"], [null, "Dall'inizio"]];
+
+function datiReport() {
+  const giorni = S.periodoReport;
+  const nelPeriodo = (dataISO) => {
+    if (!dataISO) return false;
+    if (giorni === null) return true;
+    const differenza = giorniAlla(dataISO.slice(0, 10)); // negativo = passato
+    return differenza <= 0 && -differenza <= giorni;
+  };
+  const compiti = S.dati.compiti;
+  const apertiTutti = compiti.filter(aperto);
+  const scaduti = apertiTutti.filter((c) => c.scadenza && giorniAlla(c.scadenza) < 0);
+  const problemi = compiti.filter(problemaAperto);
+  const conclusi = compiti.filter((c) =>
+    (c.stato === "Completato" || c.stato === "Archiviato") && nelPeriodo(c.data_completamento));
+  const conclusiTardi = conclusi.filter((c) => c.scadenza && c.data_completamento > c.scadenza);
+  const riscontri = [];
+  for (const c of compiti) {
+    for (const r of c.riscontri) if (nelPeriodo(r.quando)) riscontri.push({ ...r, compito: c });
+  }
+  riscontri.sort((a, b) => (a.quando < b.quando ? 1 : -1));
+
+  const perCollaboratore = S.dati.utenti
+    .filter((u) => u.attivo || compiti.some((c) => c.assegnato_a === u.id))
+    .map((u) => {
+      const suoi = (elenco) => elenco.filter((c) => c.assegnato_a === u.id);
+      const suoiRiscontri = riscontri.filter((r) => r.autore === u.nome);
+      return {
+        utente: u,
+        aperti: suoi(apertiTutti).length,
+        scaduti: suoi(scaduti).length,
+        problemi: suoi(problemi).length,
+        conclusi: suoi(conclusi).length,
+        tardi: suoi(conclusiTardi).length,
+        ultimoRiscontro: suoiRiscontri.length ? suoiRiscontri[0].quando : null,
+      };
+    });
+  const perCondominio = S.dati.condomini.map((cond) => {
+    const del = (elenco) => elenco.filter((c) => c.condominio_id === cond.id);
+    return { condominio: cond, aperti: del(apertiTutti).length, scaduti: del(scaduti).length,
+      problemi: del(problemi).length, conclusi: del(conclusi).length };
+  });
+  const esiti = {};
+  for (const e of ESITI) esiti[e] = conclusi.filter((c) => c.esito === e).length;
+  const daTenereDocchio = [...new Set([...scaduti, ...problemi])].sort(ordinaPerScadenza);
+  return { apertiTutti, scaduti, problemi, conclusi, conclusiTardi, riscontri,
+    perCollaboratore, perCondominio, esiti, daTenereDocchio };
+}
+
+function nomePeriodo() {
+  return PERIODI_REPORT.find(([g]) => g === S.periodoReport)[1].toLowerCase();
+}
+
+function tabellaCollaboratori(r, classe) {
+  return `
+    <div class="scorri-tabella"><table class="${classe}">
+      <thead><tr><th>Collaboratore</th><th class="numero-cella">Aperti</th>
+      <th class="numero-cella">Scaduti</th><th class="numero-cella">Problemi</th>
+      <th class="numero-cella">Completati</th><th class="numero-cella">di cui in ritardo</th>
+      <th>Ultimo riscontro</th></tr></thead>
+      <tbody>${r.perCollaboratore.map((riga) => `
+        <tr>
+          <td><b>${esc(riga.utente.nome)}</b>${riga.utente.ruolo === "titolare" ? " (titolare)" : ""}${riga.utente.attivo ? "" : " — non attivo"}</td>
+          <td class="numero-cella">${riga.aperti}</td>
+          <td class="numero-cella ${riga.scaduti ? "cattivo" : ""}">${riga.scaduti}</td>
+          <td class="numero-cella ${riga.problemi ? "cattivo" : ""}">${riga.problemi}</td>
+          <td class="numero-cella ${riga.conclusi ? "buono" : ""}">${riga.conclusi}</td>
+          <td class="numero-cella ${riga.tardi ? "cattivo" : ""}">${riga.tardi}</td>
+          <td>${riga.ultimoRiscontro ? dataOra(riga.ultimoRiscontro) : "—"}</td>
+        </tr>`).join("")}</tbody>
+    </table></div>`;
+}
+
+function tabellaCondomini(r, classe) {
+  return `
+    <div class="scorri-tabella"><table class="${classe}">
+      <thead><tr><th>Condominio</th><th class="numero-cella">Aperti</th>
+      <th class="numero-cella">Scaduti</th><th class="numero-cella">Problemi</th>
+      <th class="numero-cella">Completati</th></tr></thead>
+      <tbody>${r.perCondominio.map((riga) => `
+        <tr>
+          <td><b>${esc(riga.condominio.nome)}</b></td>
+          <td class="numero-cella">${riga.aperti}</td>
+          <td class="numero-cella ${riga.scaduti ? "cattivo" : ""}">${riga.scaduti}</td>
+          <td class="numero-cella ${riga.problemi ? "cattivo" : ""}">${riga.problemi}</td>
+          <td class="numero-cella ${riga.conclusi ? "buono" : ""}">${riga.conclusi}</td>
+        </tr>`).join("")}</tbody>
+    </table></div>`;
+}
+
+function vistaReport() {
+  if (!sonoCapo()) { vai("bacheca"); return; }
+  const r = datiReport();
+  const esitiTesto = ESITI.map((e) => `${e}: <b>${r.esiti[e]}</b>`).join(" · ");
+
+  $("#contenuto").innerHTML = `
+    <div class="intestazione-vista">
+      <h1>Report dello studio</h1>
+      <div class="azioni">
+        <select id="report-periodo">${PERIODI_REPORT.map(([g, nome]) =>
+          `<option value="${g === null ? "" : g}" ${g === S.periodoReport ? "selected" : ""}>${nome}</option>`).join("")}</select>
+        <button class="bottone secondario" id="report-stampa">🖨 Stampa report</button>
+      </div>
+    </div>
+
+    <div class="contatori">
+      <div class="contatore aperti"><div class="numero">${r.apertiTutti.length}</div><div class="titolo">Compiti aperti oggi</div></div>
+      <div class="contatore scaduti"><div class="numero">${r.scaduti.length}</div><div class="titolo">Scaduti da recuperare</div></div>
+      <div class="contatore in-scadenza"><div class="numero">${r.problemi.length}</div><div class="titolo">Problemi segnalati</div></div>
+      <div class="contatore completati"><div class="numero">${r.conclusi.length}</div><div class="titolo">Completati (${nomePeriodo()})</div></div>
+    </div>
+
+    <div class="riquadro">
+      <h2>👥 Lavoro per collaboratore <span class="facoltativo" style="font-weight:400">(completati: ${nomePeriodo()})</span></h2>
+      ${r.perCollaboratore.length ? tabellaCollaboratori(r, "tabella") : `<p class="vuoto">Nessun collaboratore.</p>`}
+    </div>
+
+    <div class="riquadro">
+      <h2>🏢 Lavoro per condominio <span class="facoltativo" style="font-weight:400">(completati: ${nomePeriodo()})</span></h2>
+      ${r.perCondominio.length ? tabellaCondomini(r, "tabella") : `<p class="vuoto">Nessun condominio.</p>`}
+    </div>
+
+    <div class="riquadro">
+      <h2>✅ Esiti dei compiti completati (${nomePeriodo()})</h2>
+      <p style="margin:.2rem 0">${esitiTesto}${r.conclusiTardi.length ? ` — completati oltre la scadenza: <b class="cattivo" style="color:var(--rosso)">${r.conclusiTardi.length}</b>` : ""}</p>
+    </div>
+
+    <div class="riquadro">
+      <h2>⚠️ Da tenere d'occhio: scaduti e problemi</h2>
+      ${r.daTenereDocchio.length ? r.daTenereDocchio.slice(0, 10).map((c) => rigaCompito(c)).join("")
+        : `<p class="vuoto">Niente da segnalare: nessun compito scaduto e nessun problema aperto.</p>`}
+    </div>
+
+    <div class="riquadro">
+      <h2>📣 Ultimi riscontri ricevuti (${nomePeriodo()})</h2>
+      ${r.riscontri.length ? r.riscontri.slice(0, 12).map((x) => `
+        <button class="riga-compito ${x.problema ? "novita" : ""}" data-id="${x.compito.id}">
+          <div class="titolo-compito">${esc(x.autore)} — ${esc(x.compito.titolo)}</div>
+          <div class="sotto"><span>🏢 ${esc(nomeCondominio(x.compito.condominio_id))}</span>
+            <span>${dataOra(x.quando)}</span>
+            ${x.problema ? `<span class="etichetta etichetta-problema">⚠ Problema</span>` : ""}</div>
+        </button>`).join("") : `<p class="vuoto">Nessun riscontro nel periodo scelto.</p>`}
+    </div>`;
+
+  collegaRigheCompito($("#contenuto"), "report");
+  $("#report-periodo").addEventListener("change", (e) => {
+    S.periodoReport = e.target.value === "" ? null : Number(e.target.value);
+    vistaReport();
+  });
+  $("#report-stampa").addEventListener("click", stampaReportStudio);
+}
+
+function stampaReportStudio() {
+  const r = datiReport();
+  const esitiTesto = ESITI.map((e) => `${e}: <b>${r.esiti[e]}</b>`).join(" — ");
+  eseguiStampa(`
+    ${intestazioneStampa("Report dello studio (" + nomePeriodo() + ")")}
+    <div class="stampa-sezione">
+      <div class="nome-sezione">Situazione generale</div>
+      <div class="stampa-testo">Compiti aperti oggi: <b>${r.apertiTutti.length}</b> —
+        di cui scaduti: <b>${r.scaduti.length}</b> — problemi segnalati: <b>${r.problemi.length}</b> —
+        completati nel periodo: <b>${r.conclusi.length}</b> (oltre la scadenza: ${r.conclusiTardi.length})<br>
+        Esiti: ${esitiTesto}</div>
+    </div>
+    <div class="stampa-sezione">
+      <div class="nome-sezione">Lavoro per collaboratore</div>
+      ${tabellaCollaboratori(r, "stampa-tabella")}
+    </div>
+    <div class="stampa-sezione">
+      <div class="nome-sezione">Lavoro per condominio</div>
+      ${tabellaCondomini(r, "stampa-tabella")}
+    </div>
+    <div class="stampa-sezione">
+      <div class="nome-sezione">Da tenere d'occhio (scaduti e problemi)</div>
+      ${r.daTenereDocchio.length ? `<table class="stampa-tabella"><thead>
+        <tr><th>Compito</th><th>Condominio</th><th>Assegnato a</th><th>Scadenza</th><th>Stato</th></tr></thead>
+        <tbody>${r.daTenereDocchio.map((c) => `<tr>
+          <td>${esc(c.titolo)}${problemaAperto(c) ? " ⚠" : ""}</td>
+          <td>${esc(nomeCondominio(c.condominio_id))}</td>
+          <td>${esc(nomeUtente(c.assegnato_a))}</td>
+          <td>${c.scadenza ? dataBreve(c.scadenza) : "—"}</td>
+          <td>${esc(c.stato)}</td></tr>`).join("")}</tbody></table>`
+      : `<div class="stampa-testo">Niente da segnalare.</div>`}
+    </div>
+    <div class="stampa-pie">Report generato con CondoCompiti — i dati restano sul computer dello studio.</div>`);
 }
 
 // ---------------------------------------------------------------------------

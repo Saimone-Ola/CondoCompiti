@@ -356,6 +356,20 @@ label .facoltativo { font-weight: 400; color: var(--testo-tenue); font-size: .9r
 .sezione-scadenze h2.arancio { color: var(--arancio); }
 .sezione-scadenze h2.blu { color: var(--blu-scuro); }
 
+/* ---------- report ---------- */
+
+.scorri-tabella { overflow-x: auto; }
+table.tabella { width: 100%; border-collapse: collapse; font-size: .98rem; }
+.tabella th, .tabella td { border-bottom: 1px solid var(--linea); padding: .5rem .6rem; text-align: left; }
+.tabella th {
+  color: var(--testo-tenue); font-size: .82rem; text-transform: uppercase;
+  letter-spacing: .02em; white-space: nowrap;
+}
+.tabella .numero-cella { text-align: right; }
+.tabella .cattivo { color: var(--rosso); font-weight: 700; }
+.tabella .buono { color: var(--verde); font-weight: 700; }
+.tabella tr:last-child td { border-bottom: none; }
+
 /* ---------- anagrafiche / impostazioni ---------- */
 
 .riga-elemento {
@@ -471,5 +485,6 @@ table.stampa-tabella th, table.stampa-tabella td {
   border: 1px solid #444; padding: .12cm .18cm; text-align: left; vertical-align: top;
 }
 table.stampa-tabella th { background: #e8e8e8; }
+table.stampa-tabella .numero-cella { text-align: right; }
 .stampa-gruppo { font-weight: 700; background: #f3f3f3; }
 .stampa-pie { margin-top: .5cm; font-size: 9.5pt; color: #333; }
