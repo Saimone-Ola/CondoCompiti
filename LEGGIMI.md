@@ -19,12 +19,17 @@ nessuna connessione a internet. Funziona anche completamente offline.
 ## Dove sono salvati i dati e come fare il backup
 
 - Tutti i dati (condomìni, collaboratori, compiti, riscontri) sono in **un unico
-  file su questo computer**: `dati/dati.json`, dentro la cartella del programma.
+  file su questo computer**, nella cartella personale dell'utente:
+  `CondoCompiti/dati.json` (es. su Windows `C:\Users\TuoNome\CondoCompiti\dati.json`).
+  Il percorso esatto è mostrato in **Impostazioni** e nella finestra nera all'avvio.
   Nessun dato esce mai dal computer dello studio.
 - **Backup**: entra come titolare, vai in **Impostazioni → Esporta tutti i dati**
   e salva il file scaricato su una chiavetta USB (consigliato una volta a settimana).
   In alternativa basta copiare il file `dati/dati.json`.
 - **Ripristino**: Impostazioni → **Importa / ripristina da backup** e scegli il file salvato.
+- **Aggiornare il programma senza perdere nulla**: scarica la nuova versione, estrai la
+  cartella e avviala come sempre. I dati **non stanno nella cartella del programma**, quindi
+  la nuova versione li ritrova automaticamente; la vecchia cartella si può cestinare.
 - **Cancellazione** (diritto alla cancellazione): ogni compito, condominio o
   collaboratore ha il suo bottone «Elimina»; per azzerare tutto c'è
   Impostazioni → **Cancella tutti i dati**.

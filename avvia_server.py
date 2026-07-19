@@ -15,6 +15,7 @@ import json
 import os
 import re
 import secrets
+import shutil
 import socket
 import sys
 import threading
@@ -26,8 +27,12 @@ from urllib.parse import unquote
 
 CARTELLA = os.path.dirname(os.path.abspath(__file__))
 CARTELLA_WEB = os.path.join(CARTELLA, "web")
-CARTELLA_DATI = os.path.join(CARTELLA, "dati")
+# I dati vivono nella cartella personale dell'utente, NON in quella del programma:
+# così si può aggiornare l'app sostituendo la cartella e i dati vengono ritrovati.
+CARTELLA_DATI = os.path.join(os.path.expanduser("~"), "CondoCompiti")
 FILE_DATI = os.path.join(CARTELLA_DATI, "dati.json")
+# Posizione usata dalle prime versioni (dentro la cartella del programma).
+FILE_DATI_VECCHIO = os.path.join(CARTELLA, "dati", "dati.json")
 PORTA_BASE = 8420
 DURATA_SESSIONE = 12 * 3600  # secondi
 MAX_RIGHE_REGISTRO = 500
@@ -169,6 +174,11 @@ def salva_dati():
 
 def carica_dati():
     global DATI
+    if not os.path.exists(FILE_DATI) and os.path.exists(FILE_DATI_VECCHIO):
+        # Migrazione dalle prime versioni, che salvavano dentro la cartella
+        # del programma: l'originale resta dov'è come copia di sicurezza.
+        os.makedirs(CARTELLA_DATI, exist_ok=True)
+        shutil.copy2(FILE_DATI_VECCHIO, FILE_DATI)
     if os.path.exists(FILE_DATI):
         with open(FILE_DATI, "r", encoding="utf-8") as f:
             DATI = json.load(f)
@@ -476,6 +486,7 @@ class Gestore(BaseHTTPRequestHandler):
                                    for chiave, m in MODELLI.items()}
             risposta["registro"] = DATI["registro"][:100]
             risposta["rete"] = ["http://%s:%d" % (ip, self.porta) for ip in indirizzi_lan()]
+            risposta["percorso_dati"] = FILE_DATI
         self.rispondi_json(risposta)
 
     # --- compiti ------------------------------------------------------------

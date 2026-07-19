@@ -1187,8 +1187,10 @@ function vistaImpostazioni() {
 
     <div class="riquadro">
       <h2>💾 Copia di sicurezza e dati</h2>
-      <p>Tutti i dati sono in un unico file su questo computer:
-      <b>cartella del programma → dati → dati.json</b>.</p>
+      <p>Tutti i dati sono in un unico file su questo computer:<br>
+      <b>${esc(S.dati.percorso_dati || "")}</b><br>
+      <span style="color:var(--testo-tenue)">Il file resta al suo posto anche quando aggiorni
+      il programma sostituendo la sua cartella: la nuova versione lo ritrova da sola.</span></p>
       <div class="azioni-riga" style="display:flex;gap:.6rem;flex-wrap:wrap">
         <button class="bottone primario" id="dati-esporta">⬇ Esporta tutti i dati (backup)</button>
         <button class="bottone secondario" id="dati-importa">⬆ Importa / ripristina da backup</button>
