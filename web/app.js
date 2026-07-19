@@ -203,6 +203,10 @@ async function mostraAccesso() {
   }
   $("#accesso-titolo").textContent = elenco.nome_studio || "CondoCompiti";
   $("#accesso-domanda").classList.remove("nascosto");
+  for (const selettore of [".accesso-logo", ".accesso-sotto", "#accesso-titolo",
+    ".accesso-nota", ".accesso-credito"]) {
+    $(selettore).classList.remove("nascosto");
+  }
   if (elenco.primo_avvio) { mostraPrimoAvvio(); return; }
   const ordinati = [...elenco.utenti].sort((a, b) =>
     (a.ruolo === b.ruolo ? a.nome.localeCompare(b.nome) : a.ruolo === "titolare" ? -1 : 1));
@@ -230,24 +234,43 @@ function mostraPrimoAvvio() {
   $("#accesso-passo-pin").classList.add("nascosto");
   $("#accesso-passo-nome").classList.remove("nascosto");
   $("#accesso-domanda").classList.add("nascosto");
+  // Il pannello di benvenuto ha già il marchio: il resto della scatola si nasconde.
+  for (const selettore of [".accesso-logo", ".accesso-sotto", "#accesso-titolo",
+    ".accesso-nota", ".accesso-credito"]) {
+    $(selettore).classList.add("nascosto");
+  }
   $("#accesso-utenti").innerHTML = `
-    <div style="text-align:left">
-      <p class="accesso-istruzione" style="text-align:center;margin-top:0">
-        <b>Benvenuto!</b> È il primo avvio:<br>crea l'accesso del titolare.</p>
-      <label for="pa-studio">Nome dello studio</label>
-      <input id="pa-studio" style="width:100%" placeholder="Es.: Studio Rossi Amministrazioni">
-      <label for="pa-nome">Il tuo nome (titolare) *</label>
-      <input id="pa-nome" style="width:100%" placeholder="Es.: Franca">
-      <label for="pa-pin">Scegli un PIN (4-8 cifre) *</label>
-      <input id="pa-pin" type="password" inputmode="numeric" maxlength="8" style="width:100%" autocomplete="off">
-      <label for="pa-pin2">Ripeti il PIN *</label>
-      <input id="pa-pin2" type="password" inputmode="numeric" maxlength="8" style="width:100%" autocomplete="off">
-      <p id="pa-errore" class="errore nascosto"></p>
-      <div class="accesso-bottoni">
-        <button id="pa-inizia" class="bottone primario" style="width:100%">Inizia a usare l'app</button>
+    <div class="primo-avvio-scatola">
+      <div class="primo-avvio-brand">
+        <svg class="filigrana" width="260" height="260" viewBox="0 0 64 64"><rect x="14" y="10" width="24" height="44" rx="2" fill="#fff"/><rect x="18" y="16" width="6" height="6" fill="#1e3a5f"/><rect x="28" y="16" width="6" height="6" fill="#1e3a5f"/><rect x="18" y="26" width="6" height="6" fill="#1e3a5f"/><rect x="28" y="26" width="6" height="6" fill="#1e3a5f"/><rect x="18" y="36" width="6" height="6" fill="#1e3a5f"/><rect x="28" y="36" width="6" height="6" fill="#1e3a5f"/></svg>
+        <div class="marchio">
+          <svg width="36" height="36" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#eaf1fb"/><rect x="14" y="10" width="24" height="44" rx="2" fill="#1e3a5f"/><rect x="18" y="16" width="6" height="6" fill="#eaf1fb"/><rect x="28" y="16" width="6" height="6" fill="#eaf1fb"/><rect x="18" y="26" width="6" height="6" fill="#eaf1fb"/><rect x="28" y="26" width="6" height="6" fill="#eaf1fb"/><rect x="18" y="36" width="6" height="6" fill="#eaf1fb"/><rect x="28" y="36" width="6" height="6" fill="#eaf1fb"/><circle cx="45" cy="43" r="14" fill="#15803d"/><path d="M38 43.5l5 5 9-10" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          CondoCompiti
+        </div>
+        <p class="slogan">Il registro dei compiti dello studio di amministrazione, semplice e su carta quando serve.</p>
+        <div class="primo-avvio-punti">
+          <div class="punto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7fd49a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><div><strong>Tutto in locale.</strong> Nessun cloud, nessun servizio esterno.</div></div>
+          <div class="punto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7fd49a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.4 2.8-5 5.5-5s4.9 1.6 5.5 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 7"/><path d="M17.5 15c2 .5 3 2 3.5 5"/></svg><div><strong>Per tutto lo studio.</strong> Ogni collaboratore entra col suo nome e PIN.</div></div>
+          <div class="punto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7fd49a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10v4H7z"/><path d="M7 13h10M7 9h6"/><rect x="4" y="4" width="16" height="13" rx="2"/></svg><div><strong>Stampa quando vuoi.</strong> Ogni compito ha la sua scheda cartacea.</div></div>
+        </div>
       </div>
-      <p class="accesso-nota" style="margin-top:1rem">I collaboratori li aggiungerai dopo,
-      dalla pagina <b>Anagrafiche</b>: ognuno avrà il suo nome e il suo PIN.</p>
+      <div class="primo-avvio-modulo">
+        <h2>Benvenuto! Prepara lo studio</h2>
+        <p class="sotto-modulo">È il primo avvio: crea l'accesso del titolare. Ci vuole mezzo minuto.</p>
+        <label for="pa-studio">Nome dello studio <span class="facoltativo">(facoltativo)</span></label>
+        <input id="pa-studio" placeholder="Es.: Studio Rossi Amministrazioni">
+        <label for="pa-nome">Il tuo nome (titolare) *</label>
+        <input id="pa-nome" placeholder="Es.: Franca">
+        <div class="campi-pin">
+          <div><label for="pa-pin">Scegli un PIN *</label><input id="pa-pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="••••"></div>
+          <div><label for="pa-pin2">Ripeti il PIN *</label><input id="pa-pin2" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="••••"></div>
+        </div>
+        <p class="aiuto-pin">4–8 cifre. Lo userai ogni giorno per entrare: scegli qualcosa di facile da ricordare.</p>
+        <p id="pa-errore" class="errore nascosto"></p>
+        <button id="pa-inizia" class="bottone primario" style="width:100%">Inizia a usare l'app →</button>
+        <p class="nota-dopo">Collaboratori e condomìni si aggiungono dopo, dalle Anagrafiche.</p>
+        <p class="nota-dopo" style="margin-top:.3rem;font-size:.75rem;color:#a6adba">Applicazione realizzata da Studio Marzoni</p>
+      </div>
     </div>`;
   const errore = (testo) => {
     const riga = $("#pa-errore");
