@@ -9,8 +9,10 @@ nessuna connessione a internet. Funziona anche completamente offline.
 1. Sul computer principale dello studio scarica **`CondoCompiti.exe`** da
    https://github.com/Saimone-Ola/CondoCompiti/releases/latest e mettilo dove vuoi (es. sul Desktop).
 2. **Doppio clic**: si apre una **finestra nera, lasciala aperta** (è il programma) e il browser parte da solo.
-   Se Windows mostra l'avviso «PC protetto da Windows»: **Ulteriori informazioni → Esegui comunque**;
-   se il firewall chiede l'autorizzazione: **Consenti accesso**.
+   Gli avvisi di Windows sono normali per un programma nuovo senza firma commerciale, e compaiono **solo la prima volta**:
+   - durante il download («non viene scaricato di frequente»): tre puntini `…` sul download → **Mantieni** → **Mantieni comunque**;
+   - all'apertura («PC protetto da Windows»): **Ulteriori informazioni → Esegui comunque**;
+   - se il firewall chiede l'autorizzazione: **Consenti accesso**.
 3. Nella finestra nera leggi l'**indirizzo per gli altri computer** (es. `http://192.168.1.25:8420`).
 4. Sugli **altri computer, tablet o telefoni** dell'ufficio apri il browser e scrivi quell'indirizzo: non serve installare nulla.
 5. Al **primo avvio** l'app ti dà il benvenuto: **crea l'accesso del titolare** (il tuo nome + un PIN a tua scelta). Dalle volte successive si entra **toccando il proprio nome** e scrivendo il proprio PIN.
