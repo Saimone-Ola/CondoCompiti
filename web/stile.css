@@ -356,6 +356,61 @@ label .facoltativo { font-weight: 400; color: var(--testo-tenue); font-size: .9r
 .sezione-scadenze h2.arancio { color: var(--arancio); }
 .sezione-scadenze h2.blu { color: var(--blu-scuro); }
 
+/* ---------- calendario dello scadenzario ---------- */
+
+.cal-testa {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: .6rem; flex-wrap: wrap; margin-bottom: .8rem;
+}
+.cal-mese-titolo {
+  font-size: 1.3rem; font-weight: 700; color: var(--blu-scuro);
+  text-transform: capitalize; min-width: 12rem; text-align: center;
+}
+.cal-navigazione { display: flex; align-items: center; gap: .4rem; }
+.scorri-calendario { overflow-x: auto; padding-bottom: .3rem; }
+.calendario { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; min-width: 680px; }
+.calendario > * { min-width: 0; }
+.cal-intesta {
+  text-align: center; font-weight: 700; color: var(--testo-tenue);
+  font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; padding: .15rem 0;
+}
+.cal-giorno {
+  background: #fff; border: 1px solid var(--linea); border-radius: 8px;
+  min-height: 6.4rem; padding: .3rem; display: flex; flex-direction: column; gap: .25rem;
+}
+.cal-giorno .cal-numero {
+  font-weight: 700; font-size: .95rem; text-align: right;
+  color: var(--testo-tenue); line-height: 1.2;
+}
+.cal-fuori { background: var(--sfondo); }
+.cal-fuori .cal-numero { opacity: .45; }
+.cal-festivo { background: #f7f8fb; }
+.cal-oggi { border: 2.5px solid var(--blu); box-shadow: 0 0 0 3px #dbe8fb; }
+.cal-oggi .cal-numero { color: var(--blu); }
+.cal-chip {
+  display: block; width: 100%; text-align: left;
+  border: 1px solid transparent; border-left-width: 4px; border-radius: 6px;
+  padding: .12rem .4rem; font-size: .82rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.cal-chip:hover { filter: brightness(.94); }
+.cal-bassa { background: #f1f5f9; color: #47536b; border-left-color: #94a3b8; }
+.cal-media { background: #e0f2fe; color: #075e88; border-left-color: #0284c7; }
+.cal-alta { background: #ffedd5; color: #9a4a08; border-left-color: #ea580c; }
+.cal-urgente { background: var(--rosso-chiaro); color: #8f1d1d; border-left-color: var(--rosso); }
+.cal-scaduto { background: var(--rosso); color: #fff; border-left-color: #7f1414; }
+.cal-fatto { background: var(--verde-chiaro); color: var(--verde); border-left-color: var(--verde); }
+.cal-piu {
+  background: none; border: none; text-align: left; padding: 0 .4rem;
+  font-size: .8rem; font-weight: 700; color: var(--blu); cursor: pointer;
+}
+.cal-piu:hover { text-decoration: underline; }
+.cal-legenda {
+  display: flex; gap: .5rem 1rem; flex-wrap: wrap; margin-top: .7rem;
+  font-size: .85rem; color: var(--testo-tenue); align-items: center;
+}
+.cal-legenda .cal-chip { display: inline-block; width: auto; cursor: default; }
+
 /* ---------- report ---------- */
 
 .scorri-tabella { overflow-x: auto; }

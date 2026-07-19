@@ -14,6 +14,8 @@ const S = {
   origineDettaglio: "compiti",
   filtri: { ricerca: "", condominio: "", dipendente: "", stato: "", categoria: "", speciale: "" },
   periodoReport: 30,   // giorni considerati nel report del titolare (null = tutto)
+  modoScadenzario: "calendario", // "calendario" (stile Outlook) oppure "elenco"
+  calAnno: null, calMese: null,  // mese mostrato nel calendario (inizializzati a oggi)
   accessoScelto: null, // utente scelto nella schermata di accesso
 };
 
@@ -729,7 +731,92 @@ function vistaDettaglio() {
 // Scadenzario
 // ---------------------------------------------------------------------------
 
+const NOMI_GIORNI = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+const FORMATO_MESE = new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric" });
+const FORMATO_DATA_LUNGA = new Intl.DateTimeFormat("it-IT",
+  { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+function isoDaData(data) {
+  return data.getFullYear() + "-" + String(data.getMonth() + 1).padStart(2, "0") +
+    "-" + String(data.getDate()).padStart(2, "0");
+}
+
+function classeChip(c) {
+  if (c.stato === "Completato") return "cal-fatto";
+  if (aperto(c) && giorniAlla(c.scadenza) < 0) return "cal-scaduto";
+  return "cal-" + accento(c.priorita);
+}
+
+function calendarioHtml() {
+  const oggi = oggiISO();
+  const perGiorno = new Map();
+  for (const c of S.dati.compiti) {
+    if (!c.scadenza || c.stato === "Archiviato") continue;
+    if (!perGiorno.has(c.scadenza)) perGiorno.set(c.scadenza, []);
+    perGiorno.get(c.scadenza).push(c);
+  }
+  const primo = new Date(S.calAnno, S.calMese, 1);
+  const scarto = (primo.getDay() + 6) % 7; // giorni prima del lunedì
+  const giorniNelMese = new Date(S.calAnno, S.calMese + 1, 0).getDate();
+  const settimane = Math.ceil((scarto + giorniNelMese) / 7);
+
+  let celle = "";
+  for (let i = 0; i < settimane * 7; i++) {
+    const data = new Date(S.calAnno, S.calMese, 1 - scarto + i);
+    const iso = isoDaData(data);
+    const fuoriMese = data.getMonth() !== S.calMese;
+    const festivo = data.getDay() === 0 || data.getDay() === 6;
+    const del = (perGiorno.get(iso) || []).sort((a, b) => pesoStato(a) - pesoStato(b));
+    const visibili = del.slice(0, 3);
+    celle += `
+      <div class="cal-giorno ${fuoriMese ? "cal-fuori" : ""} ${festivo ? "cal-festivo" : ""} ${iso === oggi ? "cal-oggi" : ""}">
+        <div class="cal-numero">${data.getDate()}</div>
+        ${visibili.map((c) => `
+          <button class="cal-chip ${classeChip(c)}" data-id="${c.id}"
+            title="${esc(c.titolo)} — ${esc(nomeCondominio(c.condominio_id))}">
+            ${c.stato === "Completato" ? "✔ " : ""}${esc(c.titolo)}
+          </button>`).join("")}
+        ${del.length > 3 ? `<button class="cal-piu" data-giorno="${iso}">+ altri ${del.length - 3}</button>` : ""}
+      </div>`;
+  }
+  return `
+    <div class="scorri-calendario"><div class="calendario">
+      ${NOMI_GIORNI.map((g) => `<div class="cal-intesta">${g}</div>`).join("")}
+      ${celle}
+    </div></div>
+    <div class="cal-legenda">
+      <span>Colori:</span>
+      <span class="cal-chip cal-urgente">Urgente</span>
+      <span class="cal-chip cal-alta">Alta</span>
+      <span class="cal-chip cal-media">Media</span>
+      <span class="cal-chip cal-bassa">Bassa</span>
+      <span class="cal-chip cal-scaduto">Scaduto</span>
+      <span class="cal-chip cal-fatto">✔ Completato</span>
+    </div>`;
+}
+
+function finestraGiorno(iso) {
+  const del = S.dati.compiti
+    .filter((c) => c.scadenza === iso && c.stato !== "Archiviato")
+    .sort((a, b) => pesoStato(a) - pesoStato(b));
+  const [a, m, g] = iso.split("-").map(Number);
+  apriFinestra(`
+    <h2>📅 ${FORMATO_DATA_LUNGA.format(new Date(a, m - 1, g))}</h2>
+    ${del.length ? del.map((c) => rigaCompito(c)).join("") : `<p class="vuoto">Nessun compito in scadenza.</p>`}
+    <div class="finestra-bottoni"><button class="bottone secondario" id="fg-chiudi">Chiudi</button></div>`);
+  $("#fg-chiudi").addEventListener("click", chiudiFinestra);
+  $("#finestra").querySelectorAll(".riga-compito").forEach((riga) =>
+    riga.addEventListener("click", () => { chiudiFinestra(); apriCompito(Number(riga.dataset.id), "scadenzario"); }));
+}
+
 function vistaScadenzario() {
+  if (S.calAnno === null) {
+    const adesso = new Date();
+    S.calAnno = adesso.getFullYear();
+    S.calMese = adesso.getMonth();
+  }
+  const calendario = S.modoScadenzario === "calendario";
+
   const apertiTutti = S.dati.compiti.filter(aperto);
   const conScadenza = apertiTutti.filter((c) => c.scadenza).sort(ordinaPerScadenza);
   const scaduti = conScadenza.filter((c) => giorniAlla(c.scadenza) < 0);
@@ -741,10 +828,7 @@ function vistaScadenzario() {
     <h2 class="${classe}">${titolo} (${elenco.length})</h2>
     ${elenco.map((c) => rigaCompito(c)).join("")}` : "";
 
-  $("#contenuto").innerHTML = `
-    <div class="intestazione-vista">
-      <h1>Scadenzario${sonoCapo() ? "" : " — i tuoi compiti"}</h1>
-    </div>
+  const corpoElenco = `
     <div class="sezione-scadenze">
       ${sezione("rosso", "🔴 Scaduti", scaduti)}
       ${sezione("arancio", "🟠 Entro 7 giorni", settimana)}
@@ -752,7 +836,54 @@ function vistaScadenzario() {
       ${sezione("blu", "⚪ Senza scadenza", senza)}
       ${conScadenza.length + senza.length === 0 ? `<p class="vuoto">Nessun compito aperto: tutto in ordine!</p>` : ""}
     </div>`;
-  collegaRigheCompito($("#contenuto"), "scadenzario");
+
+  const corpoCalendario = `
+    <div class="cal-testa">
+      <div class="cal-navigazione">
+        <button class="bottone secondario piccolo" id="cal-precedente" title="Mese precedente">◀</button>
+        <span class="cal-mese-titolo">${FORMATO_MESE.format(new Date(S.calAnno, S.calMese, 1))}</span>
+        <button class="bottone secondario piccolo" id="cal-successivo" title="Mese successivo">▶</button>
+      </div>
+      <button class="bottone secondario piccolo" id="cal-oggi-bottone">Vai a oggi</button>
+    </div>
+    ${calendarioHtml()}
+    ${senza.length ? `<p class="vuoto" style="margin-top:.6rem">Nota: ${senza.length === 1 ?
+      "1 compito aperto è senza scadenza e non compare" : senza.length + " compiti aperti sono senza scadenza e non compaiono"} nel calendario (vedi l'Elenco).</p>` : ""}`;
+
+  $("#contenuto").innerHTML = `
+    <div class="intestazione-vista">
+      <h1>Scadenzario${sonoCapo() ? "" : " — i tuoi compiti"}</h1>
+      <div class="azioni">
+        <button class="bottone ${calendario ? "primario" : "secondario"}" id="modo-calendario">📅 Calendario</button>
+        <button class="bottone ${calendario ? "secondario" : "primario"}" id="modo-elenco">☰ Elenco</button>
+      </div>
+    </div>
+    ${calendario ? corpoCalendario : corpoElenco}`;
+
+  $("#modo-calendario").addEventListener("click", () => { S.modoScadenzario = "calendario"; vistaScadenzario(); });
+  $("#modo-elenco").addEventListener("click", () => { S.modoScadenzario = "elenco"; vistaScadenzario(); });
+
+  if (calendario) {
+    $("#cal-precedente").addEventListener("click", () => {
+      S.calMese--; if (S.calMese < 0) { S.calMese = 11; S.calAnno--; }
+      vistaScadenzario();
+    });
+    $("#cal-successivo").addEventListener("click", () => {
+      S.calMese++; if (S.calMese > 11) { S.calMese = 0; S.calAnno++; }
+      vistaScadenzario();
+    });
+    $("#cal-oggi-bottone").addEventListener("click", () => {
+      const adesso = new Date();
+      S.calAnno = adesso.getFullYear(); S.calMese = adesso.getMonth();
+      vistaScadenzario();
+    });
+    $("#contenuto").querySelectorAll(".cal-chip[data-id]").forEach((chip) =>
+      chip.addEventListener("click", () => apriCompito(Number(chip.dataset.id), "scadenzario")));
+    $("#contenuto").querySelectorAll(".cal-piu").forEach((b) =>
+      b.addEventListener("click", () => finestraGiorno(b.dataset.giorno)));
+  } else {
+    collegaRigheCompito($("#contenuto"), "scadenzario");
+  }
 }
 
 // ---------------------------------------------------------------------------
