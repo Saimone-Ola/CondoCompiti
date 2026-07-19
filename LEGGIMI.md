@@ -20,6 +20,24 @@ nessuna connessione a internet. Funziona anche completamente offline.
 > richiede Python 3, da installare una sola volta da python.org spuntando
 > "Add python.exe to PATH").
 
+## Se dagli altri computer la pagina non si apre
+
+Quasi sempre è il **firewall di Windows sul computer principale**. In ordine:
+
+1. Sul computer principale controlla che la **finestra nera sia aperta** e che lì
+   `http://localhost:8420` funzioni: se sì, l'app è a posto.
+2. Sull'altro computer scrivi l'indirizzo **esattamente** come mostrato nella
+   finestra nera: con `http://` davanti e `:8420` in fondo
+   (es. `http://192.168.1.25:8420`), **niente https**. Se la finestra mostra più
+   indirizzi, provali tutti.
+3. Sul computer principale esegui una volta **`Ripara-Firewall.bat`** con
+   clic destro → **Esegui come amministratore** (è nella cartella del programma
+   e tra i file scaricabili della Release): autorizza CondoCompiti nel firewall.
+4. Controlla che i due computer siano sulla **stessa rete dello studio**
+   (stesso router/Wi‑Fi: niente rete "ospiti" e niente hotspot del telefono).
+5. In alternativa al punto 3: Impostazioni di Windows → **Rete e Internet** →
+   proprietà della rete in uso → imposta **Rete privata**.
+
 ## Dove sono salvati i dati e come fare il backup
 
 - Tutti i dati (condomìni, collaboratori, compiti, riscontri) sono in **un unico

@@ -50,6 +50,7 @@ jobs:
           name: CondoCompiti ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.versione) || github.ref_name }}
           files: |
             dist/CondoCompiti.exe
+            Ripara-Firewall.bat
             LEGGIMI.md
           body: |
             **CondoCompiti pronto all'uso per Windows — niente da installare.**
@@ -57,5 +58,6 @@ jobs:
             1. Scarica `CondoCompiti.exe` qui sotto e mettilo dove preferisci (es. sul Desktop del computer principale dello studio).
             2. Doppio clic: si apre la finestra nera con gli indirizzi e il browser parte da solo.
             3. Al primo avvio Windows può mostrare un avviso ("PC protetto da Windows"): premi **Ulteriori informazioni → Esegui comunque**. Se il firewall chiede l'autorizzazione, premi **Consenti accesso**.
+            4. Se dagli **altri computer** la pagina non si apre: scarica anche `Ripara-Firewall.bat`, mettilo sul computer principale ed eseguilo una volta con clic destro → **Esegui come amministratore**.
 
             I dati restano sul computer dello studio, nella cartella personale dell'utente (`CondoCompiti\dati.json`): aggiornando l'exe non si perde nulla.

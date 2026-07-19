@@ -947,6 +947,11 @@ def avvia():
     print()
     print("  Lascia aperta questa finestra mentre si lavora.")
     print("  Per chiudere il programma: premi CTRL+C oppure chiudi la finestra.")
+    if os.name == "nt":
+        print()
+        print("  Se dagli ALTRI computer la pagina NON si apre, esegui una volta")
+        print("  'Ripara-Firewall.bat' su questo computer (clic destro ->")
+        print("  Esegui come amministratore). Si scarica insieme al programma.")
     print(riga)
 
     try:
